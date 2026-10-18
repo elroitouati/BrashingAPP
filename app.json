@@ -1,25 +1,78 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "צחצוח ערב",
+    "slug": "brushing-app",
+    "scheme": "brushingapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0E1517",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.elroitouati.brushingapp",
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "he",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.elroitouati.brushingapp",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0E1517",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.VIBRATE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sharing",
+      "expo-audio",
+      [
+        "expo-localization",
+        {
+          "supportsRTL": true,
+          "forcesRTL": true,
+          "supportedLocales": [
+            "he"
+          ]
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      [
+        "expo-notifications",
+        {
+          "color": "#6FD6C9",
+          "enableRemoteNotifications": false
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "המצלמה משמשת לצילום תמונת מעקב הלבנה שבועית. התמונות נשמרות רק במכשיר.",
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "הגישה לתמונות משמשת לבחירת תמונת מעקב הלבנה. התמונות נשמרות רק במכשיר.",
+          "cameraPermission": "המצלמה משמשת לצילום תמונת מעקב הלבנה שבועית.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-image",
+      "expo-font",
+      "expo-asset"
+    ]
   }
 }
