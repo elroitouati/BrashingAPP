@@ -1,8 +1,10 @@
+import { Heebo_400Regular, Heebo_600SemiBold, Heebo_800ExtraBold, useFonts } from '@expo-google-fonts/heebo';
 import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, I18nManager, Platform, View } from 'react-native';
+import { I18nManager, Platform, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { START_TIMER_ACTION } from '../lib/notifications';
@@ -35,22 +37,24 @@ function useNotificationRouting() {
   }, []);
 }
 
-function Splash() {
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
-      <ActivityIndicator color={colors.primary} />
-    </View>
-  );
-}
+/** הטעינה מקומית ונמשכת רגע — רקע שקט במקום ספינר. */
+const blank = <View style={{ flex: 1, backgroundColor: colors.bg }} />;
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({ Heebo_400Regular, Heebo_600SemiBold, Heebo_800ExtraBold });
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <StoreProvider fallback={<Splash />}>
-        <RoutedStack />
-      </StoreProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        {fontsLoaded ? (
+          <StoreProvider fallback={blank}>
+            <RoutedStack />
+          </StoreProvider>
+        ) : (
+          blank
+        )}
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

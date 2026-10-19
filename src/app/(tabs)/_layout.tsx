@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 
 import type { IconName } from '../../components/ui';
-import { colors } from '../../theme';
+import { colors, font } from '../../theme';
 
 const TABS: { name: string; title: string; icon: IconName; iconActive: IconName }[] = [
   { name: 'index', title: 'היום', icon: 'today-outline', iconActive: 'today' },
@@ -20,7 +20,9 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 12, lineHeight: 16, fontFamily: font.semibold },
+        // טאבים הם עמיתים, לא היררכיה — מעבר מיידי, בלי אנימציה.
+        animation: 'none',
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >

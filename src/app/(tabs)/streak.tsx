@@ -8,7 +8,7 @@ import { fromDateKey } from '../../lib/date';
 import { monthlyEveningPercent, weeklyStats } from '../../lib/stats';
 import { SHIELD_RECOVERY_NIGHTS } from '../../lib/streak';
 import { useStore } from '../../state/store';
-import { colors, space, tabular, type } from '../../theme';
+import { colors, space, type } from '../../theme';
 
 export default function StreakScreen() {
   const { data, now, today, byDay, streak } = useStore();
@@ -31,12 +31,12 @@ export default function StreakScreen() {
 
       <View style={styles.bigRow}>
         <Card style={styles.big}>
-          <Text style={type.caption}>רצף נוכחי</Text>
+          <Text style={type.label}>רצף נוכחי</Text>
           <Text style={[type.display, { color: colors.primary }]}>{streak.current}</Text>
           <Text style={type.caption}>ערבים</Text>
         </Card>
         <Card style={styles.big}>
-          <Text style={type.caption}>שיא</Text>
+          <Text style={type.label}>שיא</Text>
           <Text style={type.display}>{streak.best}</Text>
           <Text style={type.caption}>ערבים</Text>
         </Card>
@@ -55,11 +55,11 @@ export default function StreakScreen() {
       </Card>
 
       <Card>
-        <Text style={[type.caption, { marginBottom: space.sm }]}>7 הימים האחרונים</Text>
+        <Text style={[type.label, { marginBottom: space.sm }]}>7 הימים האחרונים</Text>
         <View style={styles.statsRow}>
           <Stat label="ערב" value={`${week.evening}/${week.days}`} highlight />
           <Stat label="בוקר" value={`${week.morning}/${week.days}`} />
-          <Stat label="אחוז ערבים החודש" value={monthPct === null ? '—' : `${monthPct}%`} />
+          <Stat label="ערבים החודש" value={monthPct === null ? '—' : `${monthPct}%`} />
         </View>
       </Card>
 
@@ -82,7 +82,7 @@ export default function StreakScreen() {
 function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <View style={{ flex: 1, gap: 2 }}>
-      <Text style={[type.hero, { fontSize: 28 }, tabular, highlight && { color: colors.primary }]}>{value}</Text>
+      <Text style={[type.display, { fontSize: 30, lineHeight: 38 }, highlight && { color: colors.primary }]}>{value}</Text>
       <Text style={type.caption}>{label}</Text>
     </View>
   );

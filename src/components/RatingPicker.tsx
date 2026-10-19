@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { tapCue } from '../lib/feedback';
 import { colors, radius, tabular, type } from '../theme';
+import { PressableScale } from './ui';
 
 /** דירוג גוון עצמי 1–10 (10 = הכי לבן). */
 export function RatingPicker({ value, onChange }: { value: number | null; onChange: (v: number) => void }) {
@@ -11,7 +12,7 @@ export function RatingPicker({ value, onChange }: { value: number | null; onChan
         {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
           const selected = value === n;
           return (
-            <Pressable
+            <PressableScale
               key={n}
               onPress={() => {
                 tapCue();
@@ -23,7 +24,7 @@ export function RatingPicker({ value, onChange }: { value: number | null; onChan
               style={[styles.item, selected && styles.selected]}
             >
               <Text style={[type.heading, tabular, { textAlign: 'center', color: selected ? colors.onPrimary : colors.text }]}>{n}</Text>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </View>
@@ -39,7 +40,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 4 },
   item: {
     flex: 1,
-    height: 40,
+    height: 44,
     borderRadius: radius.sm,
     backgroundColor: colors.surfaceRaised,
     alignItems: 'center',

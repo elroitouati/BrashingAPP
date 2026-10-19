@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 import Svg, { G, Path, Text as SvgText } from 'react-native-svg';
 
-import { colors, type } from '../theme';
+import { colors, font, type } from '../theme';
 
 const SIZE = 220;
 const CX = SIZE / 2;
@@ -67,7 +67,7 @@ export function MouthDiagram({ active, completed = 0, size = SIZE }: Props) {
                 x={q.label.x}
                 y={q.label.y + 5}
                 fontSize={15}
-                fontWeight="700"
+                fontFamily={font.semibold}
                 fill={isActive ? colors.onPrimary : colors.textMuted}
                 textAnchor="middle"
               >
@@ -79,10 +79,10 @@ export function MouthDiagram({ active, completed = 0, size = SIZE }: Props) {
       </G>
     </Svg>
       {/* בפריסת RTL הילד הראשון בשורה מוצג מימין */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -8 }}>
-        <Text style={type.caption}>ימין</Text>
-        <Text style={type.caption}>כמו במראה</Text>
-        <Text style={type.caption}>שמאל</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -6 }}>
+        <Text style={type.label}>ימין</Text>
+        <Text style={[type.caption, { color: colors.textFaint }]}>מראה</Text>
+        <Text style={type.label}>שמאל</Text>
       </View>
     </View>
   );

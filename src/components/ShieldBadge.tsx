@@ -12,10 +12,10 @@ export function ShieldBadge({ active, recovery, size = 44 }: { active: boolean; 
       accessibilityLabel={active ? 'מגן לא פעמיים פעיל' : `המגן שבור, ${recovery} מתוך ${SHIELD_RECOVERY_NIGHTS} ערבים להחזרה`}
     >
       <Ionicons name={active ? 'shield-checkmark' : 'shield-outline'} size={size} color={active ? colors.primary : colors.warning} />
-      <Text style={[type.caption, { textAlign: 'center', color: active ? colors.primary : colors.warning }]}>{active ? 'מגן פעיל' : 'המגן שבור'}</Text>
+      <Text style={[type.label, { textAlign: 'center', color: active ? colors.primary : colors.warning }]}>{active ? 'מגן פעיל' : 'המגן שבור'}</Text>
       {!active ? (
         <Text style={[type.caption, tabular, { textAlign: 'center' }]}>
-          חוזר בעוד {SHIELD_RECOVERY_NIGHTS - recovery} ({recovery}/{SHIELD_RECOVERY_NIGHTS})
+          {recovery}/{SHIELD_RECOVERY_NIGHTS} להחזרה
         </Text>
       ) : null}
     </View>

@@ -6,7 +6,7 @@ import { Banner, Button, Card, Divider, Screen, ScreenTitle, SectionLabel } from
 import { addMonths, formatDateShort } from '../../lib/date';
 import { exportJson } from '../../lib/photos';
 import { useStore } from '../../state/store';
-import { colors, radius, space, tabular, type } from '../../theme';
+import { colors, font, radius, space, tabular, type } from '../../theme';
 
 export default function SettingsScreen() {
   const { data, today, updateSettings, notificationsGranted } = useStore();
@@ -136,8 +136,9 @@ const styles = StyleSheet.create({
     color: colors.text,
     borderRadius: radius.sm,
     paddingHorizontal: space.md,
-    height: 46,
+    height: 48,
     fontSize: 16,
+    fontFamily: font.regular,
     writingDirection: 'rtl',
   },
 });

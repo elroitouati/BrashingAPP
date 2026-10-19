@@ -13,7 +13,8 @@
       "bundleIdentifier": "com.elroitouati.brushingapp",
       "infoPlist": {
         "CFBundleDevelopmentRegion": "he",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CADisableMinimumFrameDurationOnPhone": true
       }
     },
     "android": {

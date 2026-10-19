@@ -4,7 +4,7 @@ import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
 import { formatDateShort, fromDateKey } from '../lib/date';
 import type { WhiteningPhoto } from '../lib/types';
-import { colors, type } from '../theme';
+import { colors, font, type } from '../theme';
 
 type Props = {
   photos: WhiteningPhoto[];
@@ -48,7 +48,7 @@ export function RatingChart({ photos, toothpaste }: Props) {
             <Line key={r} x1={PAD_END} x2={w - AXIS_W} y1={yOf(r)} y2={yOf(r)} stroke={colors.border} strokeWidth={1} />
           ))}
           {[1, 4, 7, 10].map((r) => (
-            <SvgText key={`l${r}`} x={w - 4} y={yOf(r) + 4} fontSize={11} fill={colors.textMuted} textAnchor="end">
+            <SvgText key={`l${r}`} x={w - 4} y={yOf(r) + 4} fontSize={12} fontFamily={font.regular} fill={colors.textMuted} textAnchor="end">
               {r}
             </SvgText>
           ))}
@@ -64,7 +64,7 @@ export function RatingChart({ photos, toothpaste }: Props) {
                 strokeWidth={1.5}
                 strokeDasharray="4 4"
               />
-              <SvgText x={xOf(toothpaste.since) - 4} y={PAD_TOP + 2} fontSize={11} fill={colors.warning} textAnchor="end">
+              <SvgText x={xOf(toothpaste.since) - 4} y={PAD_TOP + 2} fontSize={12} fontFamily={font.regular} fill={colors.warning} textAnchor="end">
                 {toothpaste.name}
               </SvgText>
             </>
@@ -75,10 +75,10 @@ export function RatingChart({ photos, toothpaste }: Props) {
             <Circle key={p.id} cx={xOf(p.date)} cy={yOf(p.selfRating)} r={4} fill={colors.bg} stroke={colors.primary} strokeWidth={2} />
           ))}
 
-          <SvgText x={w - AXIS_W} y={H - 6} fontSize={11} fill={colors.textMuted} textAnchor="end">
+          <SvgText x={w - AXIS_W} y={H - 6} fontSize={12} fontFamily={font.regular} fill={colors.textMuted} textAnchor="end">
             {formatDateShort(pts[0].date)}
           </SvgText>
-          <SvgText x={PAD_END} y={H - 6} fontSize={11} fill={colors.textMuted} textAnchor="start">
+          <SvgText x={PAD_END} y={H - 6} fontSize={12} fontFamily={font.regular} fill={colors.textMuted} textAnchor="start">
             {formatDateShort(pts[pts.length - 1].date)}
           </SvgText>
         </Svg>

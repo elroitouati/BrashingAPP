@@ -2,18 +2,31 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  FadeIn,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { MouthDiagram } from '../../components/MouthDiagram';
 import { TimerRing } from '../../components/TimerRing';
-import { Banner, Button, Screen } from '../../components/ui';
+import { Banner, Button, PressableScale, Screen } from '../../components/ui';
 import { formatDuration, isRescueHour, slotFor } from '../../lib/date';
 import { finishCue, prepareFeedback, quarterCue, tapCue } from '../../lib/feedback';
 import { isSlotDone, MIN_COUNTED_PARTIAL_SEC } from '../../lib/sessions';
 import { cuesBetween, durationFor, QUARTER_GUIDANCE, QUARTER_LABELS, timerPhase, type TimerMode } from '../../lib/timer';
 import type { Slot } from '../../lib/types';
 import { useStore } from '../../state/store';
-import { colors, radius, space, tabular, type } from '../../theme';
+import { colors, font, motion, radius, space, tabular, type } from '../../theme';
 
 const KEEP_AWAKE_TAG = 'brushing-timer';
 const TICK_MS = 50;
@@ -32,6 +45,8 @@ export default function TimerScreen() {
   const startRef = useRef(0); // Date.now() פחות הזמן שכבר נצבר
   const lastRef = useRef(0);
   const startedAtRef = useRef<Date>(new Date());
+  // התקדמות הטבעת רצה על ה-UI thread; React מתרנדר רק פעם בשנייה, כשהספרות משתנות.
+  const progress = useSharedValue(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const eveningDone = isSlotDone(byDay, today, 'evening');
@@ -46,8 +61,9 @@ export default function TimerScreen() {
   const stopTicking = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = null;
+    cancelAnimation(progress);
     deactivateKeepAwake(KEEP_AWAKE_TAG).catch(() => {});
-  }, []);
+  }, [progress]);
 
   useEffect(() => stopTicking, [stopTicking]);
 
@@ -59,7 +75,8 @@ export default function TimerScreen() {
         else finishCue();
       }
       lastRef.current = elapsed;
-      setElapsedMs(elapsed);
+      // עיגול לשנייה: אותו ערך = אין רינדור. הטיק הצפוף (50ms) קיים רק כדי שהרטט ייצא בזמן.
+      setElapsedMs(Math.floor(elapsed / 1000) * 1000);
       if (elapsed >= totalSec * 1000) {
         stopTicking();
         setPhase('finished');
@@ -75,9 +92,12 @@ export default function TimerScreen() {
       activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => {});
       if (intervalRef.current) clearInterval(intervalRef.current);
       intervalRef.current = setInterval(() => tick(totalSec), TICK_MS);
+      const totalMs = totalSec * 1000;
+      progress.set(fromMs / totalMs);
+      progress.set(withTiming(1, { duration: totalMs - fromMs, easing: Easing.linear }));
       setPhase('running');
     },
-    [tick],
+    [tick, progress],
   );
 
   const start = useCallback(
@@ -97,11 +117,12 @@ export default function TimerScreen() {
 
   const reset = useCallback(() => {
     stopTicking();
+    progress.set(0);
     setPhase('idle');
     setElapsedMs(0);
     setMode('full');
     setSlot(slotFor(new Date()));
-  }, [stopTicking]);
+  }, [stopTicking, progress]);
 
   // פתיחה מהתראה או מכפתור "התחל צחצוח": ?mode=rescue / ?autostart=1
   // זה סנכרון חד-פעמי מפרמטרי הניווט, ולכן עדכון state בתוך effect מוצדק כאן.
@@ -149,14 +170,14 @@ export default function TimerScreen() {
   }
 
   const active = phase !== 'idle';
-  const slotLabel = mode === 'rescue' ? 'גרסת הצלה · ערב' : slot === 'morning' ? 'צחצוח בוקר' : 'צחצוח ערב';
+  const slotLabel = mode === 'rescue' ? 'גרסת הצלה' : slot === 'morning' ? 'צחצוח בוקר' : 'צחצוח ערב';
 
   return (
     <Screen>
       <View style={styles.header}>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, gap: 2 }}>
           <Text style={type.title}>{slotLabel}</Text>
-          <Text style={type.muted}>{mode === 'rescue' ? '30 שניות על כל הפה. נחשב לרצף.' : '2:00 בדיוק · 4 רבעים × 30 שניות'}</Text>
+          <Text style={type.caption}>{mode === 'rescue' ? '30 שניות על כל הפה. נחשב לרצף.' : '4 רבעים × 30 שניות'}</Text>
         </View>
         {!active ? (
           <RescueToggle
@@ -173,17 +194,17 @@ export default function TimerScreen() {
       {!active && slotFor(now) === 'evening' && eveningDone ? <Banner tone="info" icon="checkmark-circle" text="הערב כבר סומן. אפשר לצחצח שוב — זה לא ישנה את הרצף." /> : null}
 
       <View style={styles.center}>
-        <TimerRing size={250} progress={t.progress} ticks={mode === 'rescue' ? 0 : 4}>
-          <Text style={[type.display, styles.time]} accessibilityLabel={`נותרו ${t.remainingSec} שניות`}>
+        <TimerRing size={264} progress={progress} ticks={mode === 'rescue' ? 0 : 4} color={mode === 'rescue' ? colors.warning : colors.primary}>
+          <Text style={type.timer} accessibilityLabel={`נותרו ${t.remainingSec} שניות`}>
             {formatDuration(t.remainingSec)}
           </Text>
-          <Text style={[type.muted, tabular]}>{mode === 'rescue' ? 'כל הפה' : `רבע ${t.quarter + 1} מתוך 4`}</Text>
+          <Text style={[type.label, tabular]}>{mode === 'rescue' ? 'כל הפה' : `רבע ${t.quarter + 1} מתוך 4`}</Text>
         </TimerRing>
       </View>
 
       <QuarterPanel mode={mode} quarter={t.quarter} active={active} />
 
-      <View style={{ gap: space.sm, marginTop: space.sm }}>
+      <View style={{ marginTop: space.sm }}>
         {phase === 'idle' ? <Button size="lg" icon="play" label={mode === 'rescue' ? 'התחל גרסת הצלה' : 'התחל צחצוח'} onPress={() => start(mode)} /> : null}
         {phase === 'running' ? <Button size="lg" variant="secondary" icon="stop" label="עצור" onPress={stopEarly} /> : null}
         {phase === 'paused' ? <Button size="lg" icon="play" label="המשך" onPress={() => run(elapsedMs, total)} /> : null}
@@ -195,58 +216,75 @@ export default function TimerScreen() {
 function RescueToggle({ available, selected, onPress }: { available: boolean; selected: boolean; onPress: () => void }) {
   if (!available) return null;
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
+      hitSlop={8}
       accessibilityRole="button"
       accessibilityState={{ selected }}
       style={[styles.rescue, selected && { backgroundColor: colors.warningSoft, borderColor: colors.warning }]}
     >
-      <Ionicons name="flash-outline" size={14} color={colors.warning} />
-      <Text style={{ color: colors.warning, fontSize: 13, fontWeight: '700' }}>{selected ? 'חזרה ל-2:00' : 'גרסת הצלה – 30 שניות'}</Text>
-    </Pressable>
+      <Ionicons name={selected ? 'refresh' : 'flash-outline'} size={16} color={colors.warning} />
+      <Text style={{ color: colors.warning, fontSize: 14, lineHeight: 20, fontFamily: font.semibold }}>{selected ? 'חזרה ל-2:00' : 'הצלה · 30 שנ׳'}</Text>
+    </PressableScale>
   );
 }
 
+/** מעבר רבע: הטקסט מתחלף ב-crossfade קצר, באותו רגע של הרטט והצליל — מצב, לא קישוט. */
 function QuarterPanel({ mode, quarter, active }: { mode: TimerMode; quarter: number; active: boolean }) {
-  const [bump] = useState(() => new Animated.Value(1));
-  useEffect(() => {
-    if (!active) return;
-    bump.setValue(0.92);
-    Animated.spring(bump, { toValue: 1, friction: 5, tension: 160, useNativeDriver: true }).start();
-  }, [quarter, active, bump]);
-
+  const name = mode === 'rescue' ? 'כל הפה' : QUARTER_LABELS[active ? quarter : 0];
   return (
     <View style={styles.quarterPanel}>
-      <MouthDiagram active={mode === 'rescue' ? null : active ? quarter : 0} completed={quarter} size={150} />
-      <Animated.View style={{ flex: 1, gap: space.xs, transform: [{ scale: bump }] }}>
-        <Text style={type.caption}>{mode === 'rescue' ? 'עכשיו' : `רבע ${quarter + 1}`}</Text>
-        <Text style={[type.title, { color: colors.primary }]}>{mode === 'rescue' ? 'כל הפה' : QUARTER_LABELS[quarter]}</Text>
-        <Text style={type.muted}>{QUARTER_GUIDANCE}</Text>
+      <MouthDiagram active={mode === 'rescue' ? null : active ? quarter : 0} completed={active ? quarter : 0} size={124} />
+      <Animated.View key={`${mode}-${name}`} entering={FadeIn.duration(motion.small).easing(motion.easeOut)} style={{ flex: 1, gap: space.xs }}>
+        <Text style={type.label}>{active ? 'עכשיו' : 'מתחילים ב'}</Text>
+        <Text style={[type.title, { color: colors.primary, fontSize: 24, lineHeight: 32 }]}>{name}</Text>
+        <Text style={type.caption}>{QUARTER_GUIDANCE}</Text>
       </Animated.View>
     </View>
   );
 }
 
+/**
+ * "סיימת" — הרגע הנדיר של היום, ולכן היחיד שמקבל קצת חגיגה:
+ * התג נוחת בקפיץ עדין מ-0.9 (לא מ-0), והמסך מהבהב בעדינות שלוש פעמים.
+ * בהפחתת תנועה: בלי קנה מידה ובלי הבהוב — רק fade.
+ */
 function FinishedView({ mode, slot, onMark, onDiscard }: { mode: TimerMode; slot: Slot; onMark: () => void; onDiscard: () => void }) {
-  const [glow] = useState(() => new Animated.Value(0));
+  const reduced = useReducedMotion();
+  const glow = useSharedValue(0);
+  const badge = useSharedValue(reduced ? 1 : 0.9);
+  const badgeOpacity = useSharedValue(0);
+
   useEffect(() => {
-    Animated.sequence(
-      [0, 1, 2].flatMap(() => [
-        Animated.timing(glow, { toValue: 1, duration: 260, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(glow, { toValue: 0, duration: 420, easing: Easing.in(Easing.quad), useNativeDriver: true }),
-      ]),
-    ).start();
-  }, [glow]);
+    badgeOpacity.set(withTiming(1, { duration: motion.small, easing: motion.easeOut }));
+    if (reduced) return;
+    badge.set(withSpring(1, { duration: 400, dampingRatio: 0.7 }));
+    glow.set(
+      withDelay(
+        80,
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: 220, easing: motion.easeOut }),
+            withTiming(0, { duration: 380, easing: motion.easeInOut }),
+          ),
+          3,
+        ),
+      ),
+    );
+  }, [reduced, badge, badgeOpacity, glow]);
+
+  const glowStyle = useAnimatedStyle(() => ({ opacity: glow.get() * 0.12 }));
+  const badgeStyle = useAnimatedStyle(() => ({ opacity: badgeOpacity.get(), transform: [{ scale: badge.get() }] }));
 
   return (
     <Screen scroll={false}>
-      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.primary, opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0, 0.12] }) }]} />
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.primary }, glowStyle]} />
       <View style={styles.finished}>
-        <View style={styles.finishedBadge}>
+        <Animated.View style={[styles.finishedBadge, badgeStyle]}>
           <Ionicons name="checkmark" size={56} color={colors.onPrimary} />
-        </View>
-        <Text style={[type.hero, { textAlign: 'center' }]}>סיימת</Text>
-        <Text style={[type.muted, { textAlign: 'center' }]}>
+        </Animated.View>
+        <Text style={[type.display, { textAlign: 'center' }]}>סיימת</Text>
+        <Text style={[type.muted, tabular, { textAlign: 'center' }]}>
           {mode === 'rescue' ? 'גרסת הצלה · 0:30' : `${slot === 'morning' ? 'בוקר' : 'ערב'} · 2:00 מלאות`}
         </Text>
         <View style={styles.tip}>
@@ -254,7 +292,7 @@ function FinishedView({ mode, slot, onMark, onDiscard }: { mode: TimerMode; slot
           <Text style={[type.body, { flex: 1 }]}>תירק, אל תשטוף בהרבה מים — כך הפלואוריד נשאר על השיניים.</Text>
         </View>
       </View>
-      <View style={{ gap: space.sm }}>
+      <View style={{ gap: space.xs }}>
         <Button size="lg" icon="checkmark-circle" label="סמן כבוצע" onPress={onMark} />
         <Button variant="ghost" label="לא לשמור" onPress={onDiscard} />
       </View>
@@ -264,27 +302,26 @@ function FinishedView({ mode, slot, onMark, onDiscard }: { mode: TimerMode; slot
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
-  center: { alignItems: 'center', marginVertical: space.md },
-  time: { fontSize: 68, lineHeight: 76 },
+  center: { alignItems: 'center', marginVertical: space.lg },
   quarterPanel: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.lg,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    padding: space.md,
+    padding: space.lg,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
   rescue: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
+    minHeight: 36,
     paddingHorizontal: space.md,
-    paddingVertical: 6,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: 'rgba(242,167,102,0.35)',
+    borderColor: colors.warningLine,
   },
   finished: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.md },
   finishedBadge: {
@@ -303,6 +340,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySoft,
     padding: space.lg,
     borderRadius: radius.md,
-    marginTop: space.lg,
+    marginTop: space.xl,
   },
 });
